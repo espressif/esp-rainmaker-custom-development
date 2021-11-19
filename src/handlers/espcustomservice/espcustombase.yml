@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'esp-custom-base'
+
+Parameters:
+  CustomTableName:
+    Type: String
+    Default: custom_table
+
+Resources:
+  #Sample dynamodb table
+  CustomTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref CustomTableName #Enter Table_Name
+      Tags:
+        - Key: created-by
+          Value: Espressif-rainmaker
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      AttributeDefinitions:
+        - AttributeName: custom_id #Add Attributes
+          AttributeType: S
+      KeySchema:
+        - AttributeName: custom_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+Outputs:
+  CustomTable:
+    Value: !GetAtt CustomTable.Arn
+    Export:
+      Name: esp-CustomTable

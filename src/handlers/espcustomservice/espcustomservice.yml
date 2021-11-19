@@ -1,0 +1,232 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'esp-custom-service'
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: go1.x
+    Tags:
+      created-by: Espressif-rainmaker-custom #change
+    Environment:
+      Variables:
+        ACCOUNT_ID: !Sub "${AWS::AccountId}"
+        REGION: !Sub "${AWS::Region}"
+        STAGE_NAME: !Ref StageName
+        LOG_LEVEL: !Ref LogLevel
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+  LogRetentionInDays:
+    Type: Number
+    Default: 7
+  LogLevel:
+    Type: String
+    Default: Debug
+
+Resources:
+  CustomLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: esp-CustomLambdaExecutionRole
+      Tags:
+        - Key: created-by
+          Value: Espressif-rainmaker
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: CustomLambdaExecutionRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                Resource:
+                  - !ImportValue esp-CustomTable #Permission to esp-CustomTable
+
+  #Sample way to add api path
+  VersionApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !ImportValue esp-RMCustomApi
+      ParentId: !ImportValue esp-RMCustomRootApi
+      PathPart: '{version}'
+
+  UserApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !ImportValue esp-RMCustomApi
+      ParentId: !Ref VersionApiResource
+      PathPart: user
+
+  CustomApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !ImportValue esp-RMCustomApi
+      ParentId: !Ref UserApiResource
+      PathPart: custom
+
+  CustomGet:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+#      AuthorizerId: NONE #Add authorizer
+#      AuthorizationScopes:
+#        - "aws.cognito.signin.user.admin"
+      HttpMethod: GET
+      ResourceId: !Ref CustomApiResource
+      RestApiId: !ImportValue esp-RMCustomApi
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Arn}/invocations
+          - Arn: !GetAtt CustomLambdaFunction.Arn
+
+  CustomPost:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+#      AuthorizerId: NONE #Add authorizer
+#      AuthorizationScopes:
+#        - "aws.cognito.signin.user.admin"
+      HttpMethod: POST
+      ResourceId: !Ref CustomApiResource
+      RestApiId: !ImportValue esp-RMCustomApi
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Arn}/invocations
+          - Arn: !GetAtt CustomLambdaFunction.Arn
+
+  CustomPut:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+#      AuthorizerId: NONE #Add authorizer
+#      AuthorizationScopes:
+#        - "aws.cognito.signin.user.admin"
+      HttpMethod: PUT
+      ResourceId: !Ref CustomApiResource
+      RestApiId: !ImportValue esp-RMCustomApi
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Arn}/invocations
+          - Arn: !GetAtt CustomLambdaFunction.Arn
+
+  CustomDelete:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+#      AuthorizerId: NONE #Add authorizer
+#      AuthorizationScopes:
+#        - "aws.cognito.signin.user.admin"
+      HttpMethod: DELETE
+      ResourceId: !Ref CustomApiResource
+      RestApiId: !ImportValue esp-RMCustomApi
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Arn}/invocations
+          - Arn: !GetAtt CustomLambdaFunction.Arn
+
+  CustomOptions:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      ResourceId: !Ref CustomApiResource
+      RestApiId: !ImportValue esp-RMCustomApi
+      MethodResponses:
+        - ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: True
+            method.response.header.Access-Control-Allow-Methods: True
+            method.response.header.Access-Control-Allow-Origin:  True
+          StatusCode: 200
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: "{\n \"statusCode\": 200\n}"
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,PUT,DELETE,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin:  "'*'"
+            ResponseTemplates:
+              application/json: "{}"
+            StatusCode: 200
+
+  #Lambda function
+  CustomLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: esp-CustomLambdaFunction
+      CodeUri: ../../../bin/handlers/espcustom
+      Handler: customlambda
+      Role: !GetAtt CustomLambdaExecutionRole.Arn
+
+  #Cloudwatch log
+  CustomLambdaFunctionLog:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ["", ["/aws/lambda/", "esp-CustomLambdaFunction"]]
+      RetentionInDays: !Ref LogRetentionInDays
+
+  CustomLambdaFunctionApiGatewayDeploy:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !ImportValue esp-RMCustomApi
+      StageName: !Ref StageName
+    DependsOn:
+      - CustomDelete
+      - CustomGet
+      - CustomPost
+      - CustomPut
+      - CustomOptions
+
+  CustomLambdaFunctionLambdaPermissionApiGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CustomLambdaFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:'
+          - !Ref 'AWS::Partition'
+          - ':execute-api:'
+          - !Ref 'AWS::Region'
+          - ':'
+          - !Ref 'AWS::AccountId'
+          - ':'
+          - !ImportValue esp-RMCustomApi
+          - /*/*
+
+Outputs:
+  TestApi:
+    Description: API Gateway endpoint URL
+    Value: !Sub
+      - https://${Arn}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/{version}/user/custom
+      - Arn: !ImportValue esp-RMCustomApi

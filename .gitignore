@@ -1,0 +1,16 @@
+# Package Files
+bin
+pkg
+
+.serverless
+.idea
+.vscode
+.DS_Store
+.envrc
+
+src/github.com/
+src/golang.org/
+/cloud_backend.iml
+**_package.yml
+**.DS_Store
+bap.sh

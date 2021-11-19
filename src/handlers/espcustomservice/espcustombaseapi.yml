@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'esp-custom-base-api'
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: go1.x
+    Environment:
+      Variables:
+        REGION: !Sub "${AWS::Region}"
+        ACCOUNT_ID: !Sub "${AWS::AccountId}"
+        LOG_LEVEL: !Ref LogLevel
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+  LogLevel:
+    Type: String
+    Default: Error
+
+Resources:
+  RMCustomApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: Rainmaker Custom AWS Api Gateway
+      StageName: !Ref StageName
+      Cors:
+        AllowMethods: "'POST, GET, PUT, DELETE, OPTIONS'"
+        AllowHeaders: "'X-Forwarded-For'"
+        AllowOrigin: "'*'"
+        AllowCredentials: False
+      Auth:
+        DefaultAuthorizer: NONE
+      GatewayResponses:
+        UNAUTHORIZED:
+          StatusCode: 401
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'*'"
+          ResponseTemplates:
+            "application/json": '{ "status": "failure", "description": "Unauthorized" }'
+        MISSING_AUTHENTICATION_TOKEN:
+          StatusCode: 405
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'*'"
+          ResponseTemplates:
+            "application/json": '{ "status": "failure", "description": "Method not allowed" }'
+        DEFAULT_4XX:
+          StatusCode: 400
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'*'"
+          ResponseTemplates:
+            "application/json": '{ "status": "failure", "description": "Bad request" }'
+
+  GetVersionCustomLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: esp-GetapiversionsCustomLambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: GetapiversionsCustomLambdaExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+
+  GetapiversionsTest:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt GetVersionCustomLambdaExecutionRole.Arn
+      FunctionName: esp-GetapiversionsCustom
+      CodeUri: ../../../bin/handlers/espcustom
+      Handler: apiversionscustom
+      Events:
+        HTTPGetApiVersions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RMCustomApi
+            Path: /apiversions
+            Method: get
+            Auth:
+              Authorizer: NONE
+
+Outputs:
+  RainmakerCustomApiRestApiId:
+    Description: 'API Gateway ARN for Rainmaker Custom AWS API Gateway'
+    Value:
+      Ref: RMCustomApi
+    Export:
+      Name: esp-RMCustomApi
+  RainmakerCustomApiRootResourceId:
+    Value: !GetAtt RMCustomApi.RootResourceId
+    Export:
+      Name: esp-RMCustomRootApi

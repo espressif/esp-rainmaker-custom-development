@@ -1,0 +1,73 @@
+Pre-requisites.
+
+a. You have AWS developer account
+
+b. You have access to Gitlab repository:
+
+https://gitlab.espressif.cn:6688/esp_rainmaker/rainmaker-custom-development
+
+1.  Install aws-cli
+
+Ref Link: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
+
+2. AWS Configuration and file settings.
+
+Ref Link: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
+
+3. Install go
+Download the Go Archive for the GO build tool from the following link
+https://golang.org/dl/
+
+Please select the 1.13.x or higher version
+
+Use the below command to download the Go build package -
+
+curl -O https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
+
+Verify the .tar file using sha256sum
+
+sha256sum go1.13.4.linux-amd64.tar.gz
+
+Extract the tarball:
+
+tar -xvf go1.13.4.linux-amd64.tar.gz
+
+Adjust the permissions and move the go directory to /usr/local
+
+sudo chown -R root:root ./go
+
+sudo mv go /usr/local
+
+Adjust the Path Variable
+
+
+4. Setting gopath
+
+Using a text editor, open the ~/.profile file( or appropriate shell startup file like .zshrc, .bashrc) and add the following two lines to the bottom of the file:
+
+export GOROOT=$HOME/go
+
+export PATH=$PATH:/usr/local/go/bin:$GOROOT/bin
+
+export GOPATH=$HOME/gosdk
+
+[ If your go version is above go 1.16.2, please add export GO111MODULE=auto in ~/.profile file]
+
+Save the file, and load the commands into the current shell instance:
+
+source ~/.profile
+
+
+Test the Go installation, by executing below command. It should display information about go tool usage
+
+  Go --help
+
+Reference Link for Ubuntu -https://www.linode.com/docs/development/go/install-go-on-ubuntu/
+
+5. Install aws-sam-cli
+
+Ref Link: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html
+
+6. Install nodejs
+
+https://changelog.com/posts/install-node-js-with-homebrew-on-os-x
