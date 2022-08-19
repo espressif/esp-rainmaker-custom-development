@@ -88,7 +88,7 @@ Resources:
     Properties:
       Role: !GetAtt GetVersionCustomLambdaExecutionRole.Arn
       FunctionName: esp-GetapiversionsCustom
-      CodeUri: ../../../bin/handlers/espcustom
+      CodeUri: ../../../bin/handlers/espcustomservice
       Handler: apiversionscustom
       Events:
         HTTPGetApiVersions:

@@ -183,7 +183,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: esp-CustomLambdaFunction
-      CodeUri: ../../../bin/handlers/espcustom
+      CodeUri: ../../../bin/handlers/espcustomservice
       Handler: customlambda
       Role: !GetAtt CustomLambdaExecutionRole.Arn
 

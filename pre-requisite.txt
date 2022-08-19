@@ -1,8 +1,8 @@
 Pre-requisites.
 
-a. You have AWS developer account
+a. You have an AWS developer account
 
-b. You have access to Gitlab repository:
+b. You have access to the Gitlab repository:
 
 https://gitlab.espressif.cn:6688/esp_rainmaker/rainmaker-custom-development
 
@@ -10,11 +10,12 @@ https://gitlab.espressif.cn:6688/esp_rainmaker/rainmaker-custom-development
 
 Ref Link: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html
 
-2. AWS Configuration and file settings.
+2. AWS Configuration and file settings
 
 Ref Link: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html
 
 3. Install go
+
 Download the Go Archive for the GO build tool from the following link
 https://golang.org/dl/
 
@@ -43,7 +44,7 @@ Adjust the Path Variable
 
 4. Setting gopath
 
-Using a text editor, open the ~/.profile file( or appropriate shell startup file like .zshrc, .bashrc) and add the following two lines to the bottom of the file:
+Using a text editor, open the ~/.profile file (or an appropriate shell startup file like .zshrc, .bashrc) and add the following two lines to the bottom of the file:
 
 export GOROOT=$HOME/go
 
@@ -58,7 +59,7 @@ Save the file, and load the commands into the current shell instance:
 source ~/.profile
 
 
-Test the Go installation, by executing below command. It should display information about go tool usage
+Test the Go installation, by executing the below command. It should display information about the go tool usage
 
   Go --help
 
